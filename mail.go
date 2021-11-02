@@ -1,40 +1,43 @@
 package mail
 
 import (
-	"net/mail"
-	"net/smtp"
-
-	"github.com/scorredoira/email"
+	gomail "gopkg.in/gomail.v2"
 )
 
 type mailSender struct {
-	FromName, Login, Psw, Domain, Port string
-	Bcc                                []string
+	Login, Psw, Domain string
+	Bcc                []string
+	Port               int
 }
 
 var Mail = &mailSender{}
 
-func (m *mailSender) Init(fromName, login, psw, domain, port string, bcc []string) {
-	m.FromName, m.Login, m.Psw, m.Bcc = fromName, login, psw, bcc
+func (m *mailSender) Init(login, psw, domain string, port int, bcc []string) {
+	m.Login, m.Psw, m.Bcc = login, psw, bcc
 	m.Domain, m.Port = domain, port
 }
 
 func (a *mailSender) SendEmail(subject, text, fileName string, to []string) error {
 
-	m := email.NewHTMLMessage(subject, text)
-	m.From = mail.Address{Name: a.FromName, Address: a.Login}
-	m.To = to
-	m.Bcc = a.Bcc
+	var err error
 
-	if fileName != "" {
-		if err := m.Attach(fileName); err != nil {
-			return err
+	for _, receipient := range append(to, a.Bcc...) {
+
+		m := gomail.NewMessage()
+		m.SetHeader("From", a.Login)
+		m.SetHeader("To", receipient)
+		m.SetHeader("Subject", subject)
+		m.SetBody("text/html", text)
+
+		if fileName != "" {
+			m.Attach(fileName)
+		}
+
+		d := gomail.NewPlainDialer(a.Domain, a.Port, a.Login, a.Psw)
+		if e := d.DialAndSend(m); e != nil {
+			err = e
 		}
 	}
 
-	if err := email.Send(a.Domain+":"+a.Port, smtp.PlainAuth("", a.Login, a.Psw, a.Domain), m); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
