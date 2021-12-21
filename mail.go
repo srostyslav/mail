@@ -4,20 +4,20 @@ import (
 	gomail "gopkg.in/gomail.v2"
 )
 
-type mailSender struct {
+type MailSender struct {
 	Login, Psw, Domain string
 	Bcc                []string
 	Port               int
 }
 
-var Mail = &mailSender{}
+var Mail = &MailSender{}
 
-func (m *mailSender) Init(login, psw, domain string, port int, bcc []string) {
+func (m *MailSender) Init(login, psw, domain string, port int, bcc []string) {
 	m.Login, m.Psw, m.Bcc = login, psw, bcc
 	m.Domain, m.Port = domain, port
 }
 
-func (a *mailSender) SendEmail(subject, text, fileName string, to []string) error {
+func (a *MailSender) SendEmail(subject, text, fileName string, to []string) error {
 
 	var err error
 
